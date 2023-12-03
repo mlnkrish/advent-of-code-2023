@@ -5,10 +5,22 @@ class Tok
     @value = value
     @start = start # {x: 0, y: 0}
     @finish = finish # {x: 0, y: 0}
+    @adjacent_positions = [
+      { x: @start[:x] - 1, y: @start[:y] - 1 },
+      { x: @start[:x], y: @start[:y] - 1 },
+      { x: @start[:x] + 1, y: @start[:y] - 1 },
+
+      { x: @start[:x] - 1, y: @start[:y] },
+      { x: @start[:x] + 1, y: @start[:y] },
+
+      { x: @start[:x] - 1, y: @start[:y] + 1 },
+      { x: @start[:x], y: @start[:y] + 1 },
+      { x: @start[:x] + 1, y: @start[:y] + 1 },
+    ]
   end
 
   def to_s
-    { value: @value, start: @start, finish: @finish}
+    { value: @value, start: @start, finish: @finish, adjacent_positions: @adjacent_positions }
   end
 
   def start
@@ -22,6 +34,10 @@ class Tok
   def value
     @value
   end
+
+  def adjacent_positions
+    @adjacent_positions
+  end
 end
 
 class Gears
@@ -30,8 +46,56 @@ class Gears
   end
 
   def part_numbers(lines)
+    numbers_and_symbols = extract_numbers_and_symbols(lines)
+    all_symbols = numbers_and_symbols[:symbols]
+    adjacent_to_symbol_positions = all_symbols.reduce([]) do |acc, sym|
+      acc.concat(sym.adjacent_positions)
+      acc
+    end
+
+    numbers_and_symbols[:numbers].reduce(0) do |sum, num|
+      if is_adjacent_to_any_position?(num, adjacent_to_symbol_positions)
+        sum + num.value.to_i
+      else
+        sum
+      end
+    end
+  end
+
+  def gear_ratio(lines)
+    numbers_and_symbols = extract_numbers_and_symbols(lines)
+    gear_symbols = numbers_and_symbols[:symbols].select { |sym| sym.value == '*' }
+    gear_symbols.reduce(0) do |sum, sym|
+      gr = 0
+      adjacent_numbers = numbers_and_symbols[:numbers].map do |num|
+        if is_adjacent_to_any_position?(num, sym.adjacent_positions)
+          num
+        else
+          nil
+        end
+      end.compact
+      if adjacent_numbers.length == 2
+        gr = adjacent_numbers[0].value.to_i * adjacent_numbers[1].value.to_i
+      end
+
+      sum + gr
+    end
+  end
+
+  private
+
+  def is_adjacent_to_any_position?(num, positions)
+    positions.any? do |pos|
+      xpos = num.start[:x]
+      (num.start[:y]..num.finish[:y]).any? do |ypos|
+        xpos == pos[:x] && ypos == pos[:y]
+      end
+    end
+  end
+
+  def extract_numbers_and_symbols(lines)
     line_index = 0
-    numbers_and_symbols = lines.reduce({ numbers: [], symbols: [] }) do |acc, l|
+    lines.reduce({ numbers: [], symbols: [] }) do |acc, l|
       line = l.strip
       length = line.length
       num_start = -1
@@ -63,44 +127,7 @@ class Gears
       acc[:symbols].concat(syms)
       acc
     end
-
-    adjacent_to_symbol_positions = numbers_and_symbols[:symbols].reduce([]) do |acc, sym|
-      acc.concat([
-        { x: sym.start[:x] -1, y: sym.start[:y] - 1 },
-        { x: sym.start[:x], y: sym.start[:y] - 1 },
-        { x: sym.start[:x] + 1, y: sym.start[:y] - 1 },
-
-        { x: sym.start[:x] -1, y: sym.start[:y] },
-        { x: sym.start[:x] + 1, y: sym.start[:y] },
-
-        { x: sym.start[:x] -1, y: sym.start[:y] + 1 },
-        { x: sym.start[:x], y: sym.start[:y] + 1 },
-        { x: sym.start[:x] + 1, y: sym.start[:y] + 1 },
-      ]
-      )
-      acc
-    end
-
-    numbers_and_symbols[:numbers].reduce(0) do |sum, num|
-      if is_adjacent_to_symbol?(num, adjacent_to_symbol_positions)
-        sum + num.value.to_i
-      else
-        sum
-      end
-    end
   end
-
-  def is_adjacent_to_symbol?(num, adjacent_to_symbol_positions)
-    adjacent_to_symbol_positions.any? do |pos|
-      xpos = num.start[:x]
-      (num.start[:y]..num.finish[:y]).any? do |ypos|
-        xpos == pos[:x] && ypos == pos[:y]
-      end
-    end
-  end
-
-
-  def sum_of_powers(lines) end
 
 end
 
@@ -110,10 +137,10 @@ File.open("input-1.txt", "r") do |f|
   puts Gears.new.part_numbers(lines)
 end
 
-# puts "Doing problem 2"
-# File.open("input-2.txt", "r") do |f|
-#   lines = f.readlines
-#   puts Cubes.new.sum_of_powers(lines)
-# end
+puts "Doing problem 2"
+File.open("input-2.txt", "r") do |f|
+  lines = f.readlines
+  puts Gears.new.gear_ratio(lines)
+end
 
 
