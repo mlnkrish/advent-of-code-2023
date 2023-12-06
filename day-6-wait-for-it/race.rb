@@ -68,6 +68,12 @@ class Race
     end
   end
 
+  def single_race(lines)
+    race_time = lines[0].split(":")[1].strip.split(" ").map { |n| n.strip }.join("").to_i
+    race_distance = lines[1].split(":")[1].strip.split(" ").map { |n| n.strip }.join("").to_i
+    BoatRace.new(race_time, race_distance).ways_to_win
+  end
+
 end
 
 puts "Doing problem 1"
@@ -76,10 +82,10 @@ File.open("input-1.txt", "r") do |f|
   puts Race.new.record_breaker(lines)
 end
 
-# puts "Doing problem 2"
-# File.open("input-2.txt", "r") do |f|
-#   lines = f.readlines
-#   puts Seed.new.range_of_seeds_to_location(lines)
-# end
+puts "Doing problem 2"
+File.open("input-2.txt", "r") do |f|
+  lines = f.readlines
+  puts Race.new.single_race(lines)
+end
 
 
