@@ -8,7 +8,17 @@ class Oasis
     readings = lines.map { |line| line.split(" ").map { |val| val.strip.to_i } }
     readings.reduce(0) do |acc, reading|
       reduced = reduce_down([], reading)
-      acc = acc + reduced.map { |r| r[-1] }.sum
+      acc + reduced.map { |r| r[-1] }.sum
+    end
+  end
+
+  def predict_prev(lines)
+    readings = lines.map { |line| line.split(" ").map { |val| val.strip.to_i } }
+    readings.reduce(0) do |acc, reading|
+      reduced = reduce_down([], reading)
+      acc + reduced.map {|r| r[0]}.reverse.reduce(0) do |lacc, val|
+        val - lacc
+      end
     end
   end
 
@@ -38,8 +48,8 @@ File.open("input-1.txt", "r") do |f|
   puts Oasis.new.predict(lines)
 end
 
-# puts "Doing problem 2"
-# File.open("input-2.txt", "r") do |f|
-#   lines = f.readlines
-#   puts Wasteland.new.steps_to_end_as_a_ghost(lines)
-# end
+puts "Doing problem 2"
+File.open("input-2.txt", "r") do |f|
+  lines = f.readlines
+  puts Oasis.new.predict_prev(lines)
+end
