@@ -8,12 +8,18 @@ class SpringData
 
   def possible_combinations
     combinations = make_combinations(@symbols, ".", "#")
-    wins = combinations.count { |possible_combination| is_win(possible_combination) }
+    wins = combinations.reject {|c| c.length == 0}.count { |possible_combination| is_win(possible_combination) }
     # puts ">>>>>> WINS #{wins}"
     wins
   end
 
   def make_combinations(symbols, repl1, repl2)
+    # puts "TRY #{symbols}"
+
+    if !has_potential?(symbols)
+      return []
+    end
+
     if !symbols.include?('?')
       return symbols
     end
@@ -25,6 +31,34 @@ class SpringData
       n[question_index] = repl
       make_combinations(n, repl1, repl2)
     end
+  end
+
+  def has_potential?(symbols)
+    subbed = symbols.gsub(/[.]+/, '|')
+    if subbed[0] == "|"
+      subbed = subbed[1..subbed.length-1]
+    end
+    splits = subbed.split("|")
+    @win_condition.each_with_index do |num, idx|
+      sub = splits[idx]
+      if sub.nil?
+        return true
+      end
+      count_of_hash = sub.split("?").map {|x| x.count("#")}.min || 0
+      if count_of_hash > num
+        # puts "+++>>> #{symbols} --- #{sub} --- #{count_of_hash}"
+        return false
+      end
+      if !sub.include?("?")
+        if count_of_hash != num
+          # puts ">>> #{symbols} --- #{sub} --- #{count_of_hash}"
+          return false
+        end
+      else
+        return true
+      end
+    end
+    return true
   end
 
   def is_win(possible_combination)
