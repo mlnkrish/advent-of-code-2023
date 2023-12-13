@@ -4,67 +4,86 @@ class SpringData
   def initialize(symbols, win_condition)
     @symbols = symbols
     @win_condition = win_condition
+    @win_condition_length = win_condition.length
   end
 
   def possible_combinations
-    combinations = make_combinations(@symbols, ".", "#")
-    wins = combinations.reject {|c| c.length == 0}.count { |possible_combination| is_win(possible_combination) }
-    # puts ">>>>>> WINS #{wins}"
-    wins
+    # puts "start #{Time.now}"
+    combinations = make_combinations(@symbols, "#", ".")
+    # puts "end #{Time.now}"
+    # puts "combinations #{combinations.flatten}"
+    combinations.flatten.sum
   end
 
   def make_combinations(symbols, repl1, repl2)
     # puts "TRY #{symbols}"
 
-    if !has_potential?(symbols)
-      return []
+    if !has_potential?(symbols, @win_condition) || !has_potential?(symbols.reverse, @win_condition.reverse)
+      return 0
     end
 
     if !symbols.include?('?')
-      return symbols
+      return 1
     end
 
     question_index = symbols.index('?')
 
-    [repl1, repl2].flat_map do |repl|
+    [repl1, repl2].map do |repl|
       n = symbols.dup
       n[question_index] = repl
       make_combinations(n, repl1, repl2)
     end
   end
 
-  def has_potential?(symbols)
-    subbed = symbols.gsub(/[.]+/, '|')
-    if subbed[0] == "|"
-      subbed = subbed[1..subbed.length-1]
-    end
-    splits = subbed.split("|")
-    @win_condition.each_with_index do |num, idx|
-      sub = splits[idx]
-      if sub.nil?
+  def has_potential?(symbols, win_condition)
+    current_index = -1
+    looking_for_next_index = true
+    current_index_count = 0
+
+    (0..symbols.length - 1).each do |idx|
+      char = symbols[idx]
+      if char == "?"
         return true
       end
-      count_of_hash = sub.split("?").map {|x| x.count("#")}.min || 0
-      if count_of_hash > num
-        # puts "+++>>> #{symbols} --- #{sub} --- #{count_of_hash}"
-        return false
+
+      if char == "."
+        if looking_for_next_index
+          next
+        else
+          if current_index_count != win_condition[current_index]
+            return false
+          end
+          looking_for_next_index = true
+        end
       end
-      if !sub.include?("?")
-        if count_of_hash != num
-          # puts ">>> #{symbols} --- #{sub} --- #{count_of_hash}"
+
+      if char == "#"
+        if looking_for_next_index
+          current_index_count = 0
+          current_index = current_index + 1
+          looking_for_next_index = false
+        end
+        current_index_count = current_index_count + 1
+
+        if current_index == @win_condition_length
           return false
         end
-      else
-        return true
+
+        if current_index_count > win_condition[current_index]
+          return false
+        end
       end
     end
-    return true
+
+    # puts "3333 #{current_index}"
+
+    current_index == @win_condition_length - 1 && current_index_count == win_condition[current_index]
   end
 
   def is_win(possible_combination)
     subbed = possible_combination.gsub(/[.]+/, '|')
     if subbed[0] == "|"
-      subbed = subbed[1..subbed.length-1]
+      subbed = subbed[1..subbed.length - 1]
     end
     subbed.split("|").map { |x| x.length } == @win_condition
   end
@@ -99,6 +118,21 @@ class HotSprings
     record.sum_of_possible_combinations
   end
 
+  def possible_combinations_unfolded(lines)
+    record = Record.new
+    lines.each do |line|
+      split = line.strip.split(" ")
+      symbol_copy = split[0]
+      win_condition_copy = split[1].split(",").map(&:to_i)
+
+      symbols = symbol_copy + "?" + symbol_copy + "?" + symbol_copy + "?" + symbol_copy + "?" + symbol_copy
+      win_conditions = win_condition_copy + win_condition_copy + win_condition_copy + win_condition_copy + win_condition_copy
+
+      record.add_data(SpringData.new(symbols, win_conditions))
+    end
+    record.sum_of_possible_combinations
+  end
+
 end
 
 puts "Doing problem 1"
@@ -110,5 +144,5 @@ end
 # puts "Doing problem 2"
 # File.open("input-2.txt", "r") do |f|
 #   lines = f.readlines
-#   puts CosmicExpansion.new.sum_of_shortest_paths(lines, 999999)
+#   puts HotSprings.new.possible_combinations_unfolded(lines)
 # end
