@@ -85,11 +85,11 @@ class ParabolicReflectorDish
 
 end
 
-# puts "Doing problem 1"
-# File.open("input-1.txt", "r") do |f|
-#   lines = f.readlines
-#   puts ParabolicReflectorDish.new.tilt_north_and_calc_load(lines)
-# end
+puts "Doing problem 1"
+File.open("input-1.txt", "r") do |f|
+  lines = f.readlines
+  puts ParabolicReflectorDish.new.tilt_north_and_calc_load(lines)
+end
 
 puts "Doing problem 2"
 File.open("input-2.txt", "r") do |f|
